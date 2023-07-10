@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>To-Do List</title>
+  <style>
+    /* Table styles */
+    .task-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .task-table th,
+    .task-table td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    .task-table th {
+      background-color: #F6A6A3;
+      color: #fff;
+    }
+    .task-table tr:hover {
+      background-color: #FFB9B4;
+    }
+
+    /* Color change dropdown styles */
+    .color-select {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 9999;
+    }
+    .color-option {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      margin-right: 5px;
+      cursor: pointer;
+    }
+
+    /* Light colors styles */
+    .light-colors {
+      position: fixed;
+      top: 60px;
+      right: 10px;
+      z-index: 9999;
+    }
+  </style>
+</head>
+<body>
+  <input type="text" id="taskInput" placeholder="Enter a task">
+  <input type="datetime-local" id="taskDateTime">
+  <button onclick="addTask()">Add</button>
+  <button onclick="deleteData()">Delete Data</button>
+  <select id="colorSelect" class="color-select" onchange="changeColor()">
+    <option value="">Select Color</option>
+    <option value="lightblue">Light Blue</option>
+    <option value="lightgreen">Light Green</option>
+    <option value="lightpink">Light Pink</option>
+  </select>
+  
+  <table id="taskTable" class="task-table">
+    <thead>
+      <tr>
+        <th>Task</th>
+        <th>Time</th>
+        <th>Completed</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="taskList"></tbody>
+  </table>
+
+  <script>
+    // Load tasks from local storage
+    window.addEventListener("load", function() {
+      var savedTasks = localStorage.getItem("tasks");
+      if (savedTasks) {
+        document.getElementById("taskList").innerHTML = savedTasks;
+      }
+    });
+
+    // Add task
+    function addTask() {
+      var taskInput = document.getElementById("taskInput");
+      var taskDateTime = document.getElementById("taskDateTime");
+      var taskList = document.getElementById("taskList");
+
+      if (taskInput.value !== "") {
+        var taskRow = document.createElement("tr");
+        var taskItem = document.createElement("td");
+        var taskText = document.createTextNode(taskInput.value);
+        taskItem.appendChild(taskText);
+        taskRow.appendChild(taskItem);
+        var taskTimeItem = document.createElement("td");
+        var taskTimeText = document.createTextNode(taskDateTime.value);
+        taskTimeItem.appendChild(taskTimeText);
+        taskRow.appendChild(taskTimeItem);
+        var completedItem = document.createElement("td");
+        var completedCheckbox = document.createElement("input");
+        completedCheckbox.type = "checkbox";
+        completedCheckbox.onchange = function() {
+          taskItem.style.textDecoration = this.checked ? "line-through" : "none";
+        };
+        completedItem.appendChild(completedCheckbox);
+        taskRow.appendChild(completedItem);
+
+        // Add remove button
+        var removeButton = document.createElement("td");
+        var removeButtonIcon = document.createElement("span");
+        removeButtonIcon.innerHTML = "&#10006;";
+        removeButtonIcon.style.cursor = "pointer";
+        removeButton.appendChild(removeButtonIcon);
+        removeButton.onclick = function() {
+          taskList.removeChild(taskRow);
+          saveTasks();
+        };
+        taskRow.appendChild(removeButton);
+
+        taskList.appendChild(taskRow);
+        taskInput.value = "";
+        taskDateTime.value = "";
+
+        setTaskAlarm(taskRow);
+
+        saveTasks();
+      }
+    }
+
+    // Set alarm for the task
+    function setTaskAlarm(taskRow) {
+      var taskTimeText = taskRow.childNodes[1].textContent;
+      var taskTime = new Date(taskTimeText);
+      var currentTime = new Date();
+
+      if (taskTime > currentTime) {
+        var timeDifference = taskTime - currentTime;
+        setTimeout(function() {
+          showNotification("Task Reminder", "Task '" + taskRow.childNodes[0].textContent + "' is due now!");
+        }, timeDifference);
+      }
+    }
+
+    // Show notification
+    function showNotification(title, body) {
+      if (Notification.permission === "granted") {
+        var options = {
+          body: body
+        };
+        new Notification(title, options);
+      } else if (Notification.permission !== "denied") {
+        Notification.requestPermission().then(function(permission) {
+          if (permission === "granted") {
+            var options = {
+              body: body
+            };
+            new Notification(title, options);
+          }
+        });
+      }
+    }
+
+    // Save tasks to local storage
+    function saveTasks() {
+      var taskList = document.getElementById("taskList");
+      localStorage.setItem("tasks", taskList.innerHTML);
+    }
+
+    // Delete stored data
+    function deleteData() {
+      localStorage.removeItem("tasks");
+      document.getElementById("taskList").innerHTML = "";
+    }
+
+    // Change color
+    function changeColor() {
+      var colorSelect = document.getElementById("colorSelect");
+      var selectedColor = colorSelect.options[colorSelect.selectedIndex].value;
+      var body = document.querySelector("body");
+      body.style.backgroundColor = selectedColor;
+    }
+  </script>
+</body>
+</html>
